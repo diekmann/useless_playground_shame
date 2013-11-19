@@ -82,15 +82,16 @@ extract_trueprop testML |> extract_eq_rhs @{typ "char list"} "test" |> Syntax.pr
 extract_trueprop testML |> extract_eq_rhs @{typ "char list"} "test" |> Syntax.pretty_term @{context} |> Pretty.writeln;
 *}
 ML {*
-extract_trueprop testlistML |> extract_eq_rhs @{typ "(nat \<times> char list) list"} "test_list" |> iter_Cons_list_list;
+extract_trueprop testlistML |> extract_eq_rhs @{typ "(nat \<times> string) list"} "test_list" |> iter_Cons_list_list;
 *}
 ML {*
 extract_trueprop testlistML
   |> extract_eq_rhs @{typ "(nat \<times> char list) list"} "test_list"
   |> iter_Cons_to_list
-  |> map (fn trm => parse_pair @{typ "nat \<Rightarrow> char list \<Rightarrow> nat \<times> char list"} trm)
+  |> map (fn trm => parse_pair @{typ "nat \<Rightarrow> string \<Rightarrow> nat \<times> string"} trm)
   (*|> map (fn trm => writeln (@{make_string} trm))*)
-  |> map (fn (trm1, trm2) => Syntax.pretty_term @{context} trm2 |> Pretty.writeln)
+  |> map (fn (trm1, trm2) => Pretty.block [Syntax.pretty_term @{context} trm1, Pretty.str " -> ",  Syntax.pretty_term @{context} trm2])
+  |> map (fn prty => Pretty.writeln prty)
   (*Syntax.pretty_term @{context} trm |> Pretty.writeln*)
 *}
 

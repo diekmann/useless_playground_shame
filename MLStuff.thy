@@ -78,21 +78,50 @@ val iter_Cons_to_list = iter_Cons_fold (fn (trm, a) => [trm]@a) []
 *}
 
 ML {*
+fun format_dot_edges (trm: (term * term) list): string list =
+  let val format_dot_edge = 
+    (fn (trm1, trm2) => (Pretty.block [Syntax.pretty_term @{context} trm1, Pretty.str " -> ",  Syntax.pretty_term @{context} trm2] |> Pretty.string_of))
+  in
+    writeln "TODO: fails for spaces in names"; map format_dot_edge trm
+  end;
+
+fun concat_str (s:string list) : string = 
+  fold (fn e => fn a  => a ^ (e^"\n")) s ("")
+
+*}
+
+ML {*
 extract_trueprop testML |> extract_eq_rhs @{typ "char list"} "test" |> Syntax.pretty_term @{context} |> Pretty.string_of;
 extract_trueprop testML |> extract_eq_rhs @{typ "char list"} "test" |> Syntax.pretty_term @{context} |> Pretty.writeln;
 *}
+
 ML {*
 extract_trueprop testlistML |> extract_eq_rhs @{typ "(nat \<times> string) list"} "test_list" |> iter_Cons_list_list;
 *}
+
+
+
+ML {*
+fun write_to_tmpfile (t: string): unit = 
+     let 
+      val p = Isabelle_System.create_tmp_path "graphviz" "graph_tmp.dot";
+      val p_str = (File.platform_path p);
+     in
+      writeln ("using tmpfile " ^ p_str);
+      File.write p (t^"\n")
+     end;
+*}
+
+
+
 ML {*
 extract_trueprop testlistML
   |> extract_eq_rhs @{typ "(nat \<times> char list) list"} "test_list"
   |> iter_Cons_to_list
   |> map (fn trm => parse_pair @{typ "nat \<Rightarrow> string \<Rightarrow> nat \<times> string"} trm)
-  (*|> map (fn trm => writeln (@{make_string} trm))*)
-  |> map (fn (trm1, trm2) => Pretty.block [Syntax.pretty_term @{context} trm1, Pretty.str " -> ",  Syntax.pretty_term @{context} trm2])
-  |> map (fn prty => Pretty.writeln prty)
-  (*Syntax.pretty_term @{context} trm |> Pretty.writeln*)
+  |> format_dot_edges
+  |> concat_str
+  |> writeln
 *}
 
 end

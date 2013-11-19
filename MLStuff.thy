@@ -5,7 +5,8 @@ begin
 
 
 definition "test = ''asdf''"
-definition "test_list = [''asdf'', ''foo'']"
+definition "test_list = [(3::nat, ''asdf''), (4, ''foo'')]"
+thm test_list_def
 
 
 ML {*
@@ -58,7 +59,7 @@ extract_trueprop testML |> extract_eq_rhs @{typ "char list"} "test" |> Syntax.pr
 extract_trueprop testML |> extract_eq_rhs @{typ "char list"} "test" |> Syntax.pretty_term @{context} |> Pretty.writeln;
 *}
 ML {*
-extract_trueprop testlistML |> extract_eq_rhs @{typ "char list list"} "test_list" |> iter_Cons_list_list;
+extract_trueprop testlistML |> extract_eq_rhs @{typ "(nat \<times> char list) list"} "test_list" |> iter_Cons_list_list;
 *}
 
 end

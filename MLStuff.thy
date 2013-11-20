@@ -102,17 +102,49 @@ extract_trueprop testlistML |> extract_eq_rhs @{typ "(nat \<times> string) list"
 
 
 ML {*
-fun write_to_tmpfile (t: string): unit = 
+fun write_to_tmpfile (t: string): Path.T = 
      let 
       val p = Isabelle_System.create_tmp_path "graphviz" "graph_tmp.dot";
       val p_str = (File.platform_path p);
      in
       writeln ("using tmpfile " ^ p_str);
-      File.write p (t^"\n")
+      File.write p (t^"\n");
+      p
      end;
 *}
 
 
+ML {*
+exception ExceptionGraphVizNotFound;
+exception ExceptionViewerNotFound;
+
+(* viz is graphiz command, e.g. dot
+   viewer is a PDF viewer, e.g. xdg-open
+   retuns return code of bash command *)
+fun paintGraph (viewer: string) (viz: string) (f: Path.T): int =
+  if (Isabelle_System.bash ("which "^viz)) <> 0 then
+    raise ExceptionGraphVizNotFound
+  else if (Isabelle_System.bash ("which "^viewer)) <> 0 then
+    raise ExceptionViewerNotFound
+  else
+    let val file = (File.platform_path f);
+        val filePDF = file^".pdf";
+        val cmd = (viz^" -o "^filePDF^" "^file^" && "^viewer^" "^filePDF)
+    in
+      writeln ("executing: "^cmd);
+      Isabelle_System.bash cmd
+    end
+
+val paintGraphDotLinux = paintGraph "xdg-open" "dot"
+*}
+
+ML {*
+val graph = "digraph graphname { \n a -> b -> c; \n b -> d; \n}";
+
+val file = write_to_tmpfile graph;
+
+paintGraphDotLinux file;
+*}
 
 ML {*
 extract_trueprop testlistML

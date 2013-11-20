@@ -149,6 +149,14 @@ fun paintGraph (viewer: string) (viz: string) (f: Path.T): int =
     end
 
 val paintGraphDotLinux = paintGraph "xdg-open" "dot"
+
+fun ohShitOpenFileInGedit (f: Path.T): int =
+    let val file = (File.platform_path f);
+        val cmd = ("gedit "^file^" &")
+    in
+      writeln ("executing: "^cmd);
+      Isabelle_System.bash cmd
+    end
 *}
 
 ML {*
@@ -156,7 +164,7 @@ val graph = "digraph graphname { \n a -> b -> c; \n b -> d; \n}";
 
 val file = write_to_tmpfile graph;
 
-paintGraphDotLinux file;
+(*paintGraphDotLinux file;*)
 *}
 
 ML {*
@@ -166,6 +174,8 @@ extract_trueprop testlistML
   |> map (fn trm => parse_pair @{typ "nat \<Rightarrow> string \<Rightarrow> nat \<times> string"} trm)
   |> format_dot_edges
   |> concat_str
+  (*|> write_to_tmpfile
+  |> ohShitOpenFileInGedit*)
   |> writeln
 *}
 

@@ -77,6 +77,19 @@ fun iter_Cons_fold (f: (term * 'a) -> 'a) (a: 'a) (trm: term): 'a =
 val iter_Cons_to_list = iter_Cons_fold (fn (trm, a) => [trm]@a) []
 *}
 
+
+ML {*
+fun is_valid_char (c : char) : bool =
+    (c <= #"z" andalso c >= #"a") orelse (c <= #"Z" andalso c >= #"A") orelse
+    (c <= #"9" andalso c >= #"0");
+
+fun sanitize_string (s: string) : string =
+  String.map (fn c => if is_valid_char c then c else #"-") s;
+
+sanitize_string "asdsa sjhsa saklj \"/$(Tnd 098z8    9"
+*}
+
+
 ML {*
 fun format_dot_edges (trm: (term * term) list): string list =
   let val format_dot_edge = 
@@ -129,7 +142,7 @@ fun paintGraph (viewer: string) (viz: string) (f: Path.T): int =
   else
     let val file = (File.platform_path f);
         val filePDF = file^".pdf";
-        val cmd = (viz^" -o "^filePDF^" "^file^" && "^viewer^" "^filePDF)
+        val cmd = (viz^" -o "^filePDF^" -Tpdf "^file^" && "^viewer^" "^filePDF)
     in
       writeln ("executing: "^cmd);
       Isabelle_System.bash cmd

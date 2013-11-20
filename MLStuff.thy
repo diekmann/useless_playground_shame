@@ -98,9 +98,27 @@ val file = write_to_tmpfile graph;
 *}
 
 ML {*
+(*
+the parameter edges is a definition with an equal
+edges = [(a,b), ...]
+*)
 fun visualize_graph (tune_node_format : term -> string -> string) (edges: thm) =
   prop_of edges
   |> HOLogic.dest_Trueprop |> HOLogic.dest_eq |> snd
+  |> HOLogic.dest_list
+  |> map HOLogic.dest_prod
+  |> format_dot tune_node_format
+  |> write_to_tmpfile
+  (*|> ohShitOpenFileInGedit*)
+  |> paintGraphDotLinux
+  (*|> writeln*);
+
+(*
+the parameter edges is just a list of pairs
+[(a,b), ..]
+*)
+fun visualize_graph (tune_node_format : term -> string -> string) (edges: term) =
+  edges
   |> HOLogic.dest_list
   |> map HOLogic.dest_prod
   |> format_dot tune_node_format

@@ -92,14 +92,19 @@ sanitize_string "asdsa sjhsa saklj \"/$(Tnd 098z8    9"
 
 ML {*
 fun format_dot_edges (trm: (term * term) list): string list =
-  let val format_dot_edge = 
-    (fn (trm1, trm2) => (Pretty.block [Syntax.pretty_term @{context} trm1, Pretty.str " -> ",  Syntax.pretty_term @{context} trm2] |> Pretty.string_of))
+  let
+    val format_node = Syntax.pretty_term @{context} #> Pretty.string_of #> ATP_Util.unyxml #> sanitize_string
+    fun format_dot_edge (t1, t2) = format_node t1 ^ " -> " ^ format_node t2 ^ ";"
   in
-    writeln "TODO: fails for spaces in names"; map format_dot_edge trm
+    writeln "TODO: name clashes?"; map format_dot_edge trm
   end;
 
 fun concat_str (s:string list) : string = 
   fold (fn e => fn a  => a ^ (e^"\n")) s ("")
+
+fun format_dot (ts: (term * term) list) : string =
+  "digraph graphname {\n" ^ concat_str (format_dot_edges ts) ^ "}"
+
 
 *}
 
@@ -172,11 +177,11 @@ extract_trueprop testlistML
   |> extract_eq_rhs @{typ "(nat \<times> char list) list"} "test_list"
   |> iter_Cons_to_list
   |> map (fn trm => parse_pair @{typ "nat \<Rightarrow> string \<Rightarrow> nat \<times> string"} trm)
-  |> format_dot_edges
-  |> concat_str
-  (*|> write_to_tmpfile
-  |> ohShitOpenFileInGedit*)
-  |> writeln
+  |> format_dot
+  |> write_to_tmpfile
+  (*|> ohShitOpenFileInGedit*)
+  |> paintGraphDotLinux
+  (*|> writeln*)
 *}
 
 ML{*

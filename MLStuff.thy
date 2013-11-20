@@ -22,10 +22,10 @@ Syntax.pretty_term @{context} testML |> Pretty.backquote |> Pretty.writeln;
 
 exception MatchNotExhaustiveButThisIsYourFault_extract_trueprop;
 
-fun extract_trueprop trm = 
-    case trm
+fun extract_trueprop trm = HOLogic.dest_Trueprop trm
+    (* case trm
       of Const ("HOL.Trueprop", @{typ "bool \<Rightarrow> prop"}) $ t1 => t1
-      | _ => raise MatchNotExhaustiveButThisIsYourFault_extract_trueprop;
+      | _ => raise MatchNotExhaustiveButThisIsYourFault_extract_trueprop;*)
 
 exception extract_eq_rhs_full_name_exception
 exception extract_eq_rhs_type_exception
@@ -177,6 +177,22 @@ extract_trueprop testlistML
   (*|> write_to_tmpfile
   |> ohShitOpenFileInGedit*)
   |> writeln
+*}
+
+ML{*
+
+
+let
+val term = @{term "[(3::nat, ''asdf''), (4, ''foo'')]"}
+val elems = HOLogic.dest_list term |> map HOLogic.dest_prod;
+
+in
+Syntax.pretty_term @{context} term |> Pretty.str_of |> ATP_Util.unyxml
+end
+*}
+
+ML{*
+
 *}
 
 end

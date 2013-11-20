@@ -84,7 +84,7 @@ fun is_valid_char (c : char) : bool =
     (c <= #"9" andalso c >= #"0");
 
 fun sanitize_string (s: string) : string =
-  String.map (fn c => if is_valid_char c then c else #"-") s;
+  String.map (fn c => if is_valid_char c then c else #"a") s;
 
 sanitize_string "asdsa sjhsa saklj \"/$(Tnd 098z8    9"
 *}

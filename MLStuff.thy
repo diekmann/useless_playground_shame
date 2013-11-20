@@ -3,19 +3,12 @@ imports Main
 begin
 
 
-
-definition "test = ''asdf''"
 definition "test_list = [(3::nat, ''asdf''), (4, ''foo'')]"
 thm test_list_def
 
 
 ML {*
 Context.theory_name @{theory}
-*}
-
-ML{*
-val testML = rep_thm (@{thm test_def}) |> #prop;
-val testlistML = rep_thm (@{thm test_list_def}) |> #prop;
 *}
 
 
@@ -32,33 +25,24 @@ sanitize_string "asdsa sjhsa saklj \"/$(Tnd 098z8    9"
 
 
 ML {*
-fun format_dot_edges (trm: (term * term) list): string list =
+fun format_dot_edges (tune_node_format : term -> string -> string) (trm: (term * term) list): string list =
   let
-    val format_node = Syntax.pretty_term @{context} #> Pretty.string_of #> ATP_Util.unyxml #> sanitize_string
+    fun format_node t = t |> Syntax.pretty_term @{context} |> Pretty.string_of |> ATP_Util.unyxml |> tune_node_format t |>  sanitize_string
     fun format_dot_edge (t1, t2) = format_node t1 ^ " -> " ^ format_node t2 ^ ";"
   in
     writeln "TODO: name clashes?"; map format_dot_edge trm
   end;
 
+val default_tune_node_format = (fn _ => I);
+
 fun concat_str (s:string list) : string = 
   fold (fn e => fn a  => a ^ (e^"\n")) s ("")
 
-fun format_dot (ts: (term * term) list) : string =
-  "digraph graphname {\n" ^ concat_str (format_dot_edges ts) ^ "}"
+fun format_dot (tune_node_format : term -> string -> string) (ts: (term * term) list) : string =
+  "digraph graphname {\n" ^ concat_str (format_dot_edges tune_node_format ts) ^ "}"
 
 
 *}
-
-ML {*
-extract_trueprop testML |> extract_eq_rhs @{typ "char list"} "test" |> Syntax.pretty_term @{context} |> Pretty.string_of;
-extract_trueprop testML |> extract_eq_rhs @{typ "char list"} "test" |> Syntax.pretty_term @{context} |> Pretty.writeln;
-*}
-
-ML {*
-extract_trueprop testlistML |> extract_eq_rhs @{typ "(nat \<times> string) list"} "test_list" |> iter_Cons_list_list;
-*}
-
-
 
 ML {*
 fun write_to_tmpfile (t: string): Path.T = 
@@ -114,30 +98,19 @@ val file = write_to_tmpfile graph;
 *}
 
 ML {*
-HOLogic.dest_Trueprop testlistML |> HOLogic.dest_eq |> snd
+fun visualize_graph (tune_node_format : term -> string -> string) (edges: thm) =
+  prop_of edges
+  |> HOLogic.dest_Trueprop |> HOLogic.dest_eq |> snd
   |> HOLogic.dest_list
   |> map HOLogic.dest_prod
-  |> format_dot
+  |> format_dot tune_node_format
   |> write_to_tmpfile
   (*|> ohShitOpenFileInGedit*)
   |> paintGraphDotLinux
-  (*|> writeln*)
+  (*|> writeln*);
+
+(*visualize_graph default_tune_node_format @{thm test_list_def}*)
 *}
 
-ML{*
-
-
-let
-val term = @{term "[(3::nat, ''asdf''), (4, ''foo'')]"}
-val elems = HOLogic.dest_list term |> map HOLogic.dest_prod;
-
-in
-Syntax.pretty_term @{context} term |> Pretty.str_of |> ATP_Util.unyxml
-end
-*}
-
-ML{*
-
-*}
 
 end

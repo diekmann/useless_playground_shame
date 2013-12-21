@@ -36,10 +36,14 @@ fun format_dot_edges (tune_node_format : term -> string -> string) (trm: (term *
 val default_tune_node_format = (fn _ => I);
 
 fun concat_str (s:string list) : string = 
-  fold (fn e => fn a  => a ^ (e^"\n")) s ("")
+  fold (fn e => fn a  => a ^ (e^"\n")) s ("");
+
+fun apply_dot_header (es: string list) : string =
+  "digraph graphname {\n" ^ concat_str es ^ "}";
 
 fun format_dot (tune_node_format : term -> string -> string) (ts: (term * term) list) : string =
-  "digraph graphname {\n" ^ concat_str (format_dot_edges tune_node_format ts) ^ "}"
+  apply_dot_header (format_dot_edges tune_node_format ts);
+
 
 
 *}

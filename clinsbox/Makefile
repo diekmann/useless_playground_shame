@@ -1,9 +1,9 @@
 CC		= gcc
-CFLAGS		= -ansi -std=c99 -Wall -Wextra -O2 -Werror -DDEBUG
+CFLAGS		= -ansi -std=c99 -Wall -Wextra -O2 -DDEBUG #-Werror
 LIBS		= #-lcurl
 
 # all source files
-_SOURCES	= main.c
+_SOURCES	= main.c syscall-reporter.c
 
 # the directories used during build
 SRCDIR		= src
@@ -21,7 +21,7 @@ OBJECTS 	= $(patsubst %,$(OBJDIR)/%,$(_OBJECTS))
 SOURCES 	= $(patsubst %,$(SRCDIR)/%,$(_SOURCES))
 
 
-all: clean $(OBJECTS) $(EXECUTABLE)
+all: clean syscall-names.h $(OBJECTS) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) -o $(BINDIR)/$(EXECUTABLE) $(CFLAGS) $(OBJECTS) $(LIBS)
@@ -37,7 +37,15 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 doc:
 	doxygen Doxyfile
 
+
+syscall-names.h:
+	echo "static const char *syscall_names[] = {" > $(SRCDIR)/syscall-names.h ;\
+	echo "#include <sys/syscall.h>" | cpp -dM | grep '^#define __NR_' | \
+		LC_ALL=C sed -r -n -e 's/^\#define[ \t]+__NR_([a-z0-9_]+)[ \t]+([0-9]+)(.*)/ [\2] = "\1",/p' >> $(SRCDIR)/syscall-names.h ;\
+	echo "};" >> $(SRCDIR)/syscall-names.h
+	
 clean:
+	rm -f $(SRCDIR)/syscall-names.h
 	rm -f $(OBJDIR)/*.o
 	rm -f *.tmp
 	rm -f $(BINDIR)/$(EXECUTABLE)
@@ -47,6 +55,10 @@ clean:
 run: $(EXECUTABLE)
 	echo "==== starting ===="
 	./$(BINDIR)/$(EXECUTABLE)
+	
+strace: $(EXECUTABLE)
+	echo "==== starting ===="
+	strace ./$(BINDIR)/$(EXECUTABLE)
 
 analysis: $(EXECUTABLE)
 	ltrace -n 2 -fiS -o ltrace.tmp ./$(BINDIR)/$(EXECUTABLE)

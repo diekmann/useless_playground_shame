@@ -103,7 +103,65 @@ lemma pcas_distinct_len: "pcas a p b \<Longrightarrow>  a \<noteq> b \<Longright
 lemma pawalk_verts_length: "length (pawalk_verts a p) = Suc (length p)"
   by(induction p arbitrary: a, simp_all)
 
-value "dropWhile (\<lambda>x. x \<noteq> (1::nat)) [2,3,4,1,2,3]"
+
+lemma takeWhile_append_split: "\<lbrakk>\<exists>x\<in>set X. \<not> P x \<Longrightarrow> Q (takeWhile P X); 
+       (\<And>x. x\<in>set X \<Longrightarrow> P x) \<Longrightarrow> Q (X@takeWhile P Y) \<rbrakk> \<Longrightarrow> 
+      Q (takeWhile P (X@Y) )"
+using takeWhile_append1 takeWhile_append2 by metis
+
+fun lastRemove :: "('a\<times>'a) \<Rightarrow>  ('a \<times> 'a) list \<Rightarrow> ('a \<times> 'a) list" where 
+  "lastRemove (a,b) l = rev (takeWhile (\<lambda>(x,y). y \<noteq> b) (rev l))"
+value "lastRemove (0::nat,1) [(0,1), (1::nat,2), (2,3), (3,2), (2,4), (4,5)]"
+value "lastRemove (1::nat,2) [(1::nat,2), (2,3), (3,2), (2,4), (4,5), (5,6)]"
+value "lastRemove (2::nat,3) [(2,3), (3,2), (2,4), (4,5)]"
+lemma lastRemove_empty: "lastRemove c [] = []" by(cases c, simp)
+lemma lastRemove_drop: "\<exists>n. lastRemove c l = drop n l"
+  apply(induction l, simp_all)
+  apply(simp add: lastRemove_empty)
+  apply(cases c, clarsimp)
+  apply(drule_tac f="rev" in HOL.arg_cong)
+  apply(simp)
+  apply(rename_tac h n)
+  apply(case_tac "h = b")
+  apply(simp_all add: List.takeWhile_tail)
+  apply(rule_tac x="Suc n" in exI)
+  apply(simp)
+  apply(rule takeWhile_append_split)
+  apply(simp_all)
+  apply(rule_tac x="Suc n" in exI, simp)
+  apply(rule_tac x="0" in exI)
+  apply(simp)
+  done
+  
+lemma lastRemove_length: "length (lastRemove c l) \<le> length l"
+  apply(induction l, simp_all)
+  apply(simp add: lastRemove_empty)
+  apply(cases c, clarsimp)
+  by (metis (lifting) length_Suc_conv length_rev length_takeWhile_le rev.simps(2))
+lemma lastRemove_set: "set (lastRemove c p) \<subseteq> set p"
+  apply(induction p, simp_all add: lastRemove_empty)
+  apply(cases c, clarsimp)
+  by (metis prod.inject rev.simps(2) set_ConsD set_rev set_takeWhileD)
+
+
+(* [(1,2), (2,3), (3,2), (2,4)] \<longrightarrow> [(1,2), (2,4)] *)
+function kreisentfernung :: "('a \<times> 'a) list \<Rightarrow> ('a \<times> 'a) list" where
+  "kreisentfernung [] = []" |
+  "kreisentfernung (c#cs) = c#kreisentfernung (lastRemove c cs)"
+by pat_completeness auto
+termination sorry
+value "kreisentfernung [(0,1), (1::nat,2), (2,3), (3,2), (2,4), (4,5)]"
+value "kreisentfernung [(1::nat,2), (2,3), (3,2), (2,4), (4,4), (4,1), (1::nat,2), (2,3), (3,2), (2,4), (4,4)]"
+value "kreisentfernung [(1::nat,2), (2,3), (3,2), (2,4), (4,5), (5,3)]"
+value "kreisentfernung [(1::nat,2), (2,3), (3,2), (2,4), (4,5), (5,3), (3,1)]"
+
+lemma "c#kreisentfernung (lastRemove c cs) = c#(lastRemove c (kreisentfernung cs))" quickcheck
+lemma "set (kreisentfernung p) \<subseteq> set p"
+  apply(induction p)
+  apply(simp_all)
+oops
+
+
 
 lemma "pcas x p y \<Longrightarrow> \<exists>p'. pcas x p' y \<and> set (pawalk_verts x p') \<subseteq> set (pawalk_verts x p) \<and> distinct (tl (pawalk_verts x p'))"
   apply(induction x p y rule: pcas.induct)

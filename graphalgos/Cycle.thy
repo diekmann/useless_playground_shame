@@ -114,6 +114,11 @@ fun lastRemove :: "('a\<times>'a) \<Rightarrow>  ('a \<times> 'a) list \<Rightar
 value "lastRemove (0::nat,1) [(0,1), (1::nat,2), (2,3), (3,2), (2,4), (4,5)]"
 value "lastRemove (1::nat,2) [(1::nat,2), (2,3), (3,2), (2,4), (4,5), (5,6)]"
 value "lastRemove (2::nat,3) [(2,3), (3,2), (2,4), (4,5)]"
+value "lastRemove (2::nat,3) [(2,3), (3,2), (2,4), (4,5), (5,3), (3,6)]"
+value "lastRemove (2::nat,1) [(2,1)]"
+value "lastRemove (1::nat,2) [(4,5)]"
+value "lastRemove (1::nat,1) [(1,1), (1,2), (2,2)]"
+value "lastRemove (1::nat,1) [(1,1), (2,2)]"
 lemma lastRemove_empty: "lastRemove c [] = []" by(cases c, simp)
 lemma lastRemove_drop: "\<exists>n. lastRemove c l = drop n l"
   apply(induction l, simp_all)
@@ -134,15 +139,38 @@ lemma lastRemove_drop: "\<exists>n. lastRemove c l = drop n l"
   done
   
 lemma lastRemove_length: "length (lastRemove c l) \<le> length l"
-  apply(induction l, simp_all)
-  apply(simp add: lastRemove_empty)
-  apply(cases c, clarsimp)
-  by (metis (lifting) length_Suc_conv length_rev length_takeWhile_le rev.simps(2))
+  using lastRemove_drop by (metis Nat.diff_le_self length_drop)
 lemma lastRemove_set: "set (lastRemove c p) \<subseteq> set p"
   apply(induction p, simp_all add: lastRemove_empty)
   apply(cases c, clarsimp)
   by (metis prod.inject rev.simps(2) set_ConsD set_rev set_takeWhileD)
 
+
+lemma "\<lbrakk>lastRemove (x,y) p \<noteq> []; pcas x p y\<rbrakk> \<Longrightarrow> y = fst (hd (lastRemove (x,y) p))"
+  apply(induction p arbitrary: x y)
+  apply(simp_all)
+  apply(rule takeWhile_append_split)
+  apply(simp_all)
+  apply force
+
+  oops
+lemma "\<lbrakk>pcas z p y\<rbrakk> \<Longrightarrow> pcas x ((x,z)#(lastRemove (x,z) p)) y"
+oops
+
+lemma "\<lbrakk>pcas x p y\<rbrakk> \<Longrightarrow> (p = [] \<longrightarrow> pcas x (lastRemove c p) y) \<and> (p \<noteq> [] \<longrightarrow> pcas x ((hd p)#(lastRemove (hd p) p)) y)"
+proof(induction p arbitrary: x y)
+  case Nil thus ?case by(simp add: lastRemove_empty)
+  next
+  case (Cons a p)
+  from lastRemove_drop obtain n where s: "(lastRemove a (a#p)) = drop n (a#p)" by blast
+  from Cons show ?case
+  apply(simp add: s)
+  apply(case_tac "p=[]")
+  apply(simp_all)
+oops
+
+lemma "\<forall> (x,y) \<in> set (lastRemove (a,b) l). b \<notin> snd `  set (lastRemove (a,b) l)"
+  apply(simp) by (metis (lifting, mono_tags) in_snd_imageE set_takeWhileD split_conv)
 
 (* [(1,2), (2,3), (3,2), (2,4)] \<longrightarrow> [(1,2), (2,4)] *)
 function kreisentfernung :: "('a \<times> 'a) list \<Rightarrow> ('a \<times> 'a) list" where
@@ -154,12 +182,35 @@ value "kreisentfernung [(0,1), (1::nat,2), (2,3), (3,2), (2,4), (4,5)]"
 value "kreisentfernung [(1::nat,2), (2,3), (3,2), (2,4), (4,4), (4,1), (1::nat,2), (2,3), (3,2), (2,4), (4,4)]"
 value "kreisentfernung [(1::nat,2), (2,3), (3,2), (2,4), (4,5), (5,3)]"
 value "kreisentfernung [(1::nat,2), (2,3), (3,2), (2,4), (4,5), (5,3), (3,1)]"
+value "kreisentfernung [(1::nat,1), (2,1)]"
+value "kreisentfernung [(2::nat,1)]"
+value "kreisentfernung [(2::nat,3), (3,2), (2,4), (4,5), (5,3)]"
 
-lemma "c#kreisentfernung (lastRemove c cs) = c#(lastRemove c (kreisentfernung cs))" quickcheck
-lemma "set (kreisentfernung p) \<subseteq> set p"
-  apply(induction p)
-  apply(simp_all)
+lemma "set (kreisentfernung (drop x p)) \<subseteq> set p"
+  proof(induction p arbitrary: x)
+  case Nil thus ?case by(simp add: lastRemove_empty)
+  next
+  case (Cons a p)
+  assume Cons: "\<And>x. set (kreisentfernung (drop x p)) \<subseteq> set p"
+  from lastRemove_drop obtain n where s: "lastRemove a p = drop n p" by blast
+  from Cons have "set (kreisentfernung (drop n p)) \<subseteq> set p" by simp
+  hence "set (kreisentfernung (lastRemove a p)) \<subseteq> insert a (set p)"
+    by(simp add: s subset_insertI2)
+  from this Cons show ?case
+  by(case_tac x, auto)
+qed
+lemma "drop 0 l = l" by simp
+
+lemma "pcas x p y \<Longrightarrow> pcas x (kreisentfernung p) y"
+apply(induction p)
+  apply(simp)
+  apply(simp)
 oops
+value "pawalk_verts 1 [(1::nat,2), (2,3), (3,2), (2,4), (4,5), (5,3), (3,1)]"
+lemma "pcas x p y \<Longrightarrow> distinct (tl (pawalk_verts x (kreisentfernung (filter (\<lambda>(x,y). x\<noteq>y) p))))"
+nitpicks
+oops
+(*aber erstmal pcas zeigen*)
 
 
 
@@ -245,9 +296,9 @@ lemma assumes D_path: "(\<forall> x\<in>nodes_of D. \<forall> y\<in>snd`D. x \<n
    shows "has_undirected_cycle_in (D \<union> {(a,d2)})"
    proof(unfold has_undirected_cycle_in_def)
     from ad2W WD_edge have "\<exists> (x,y) \<in> D. (y, a) \<in> D" by fast
-    from this obtain y where yD: "(y, a) \<in> D" by blast (*maybe add y to the path to prolong it?*)
+    from this obtain y where yD: "(y, a) \<in> D" by blast
     have "a \<noteq> d2" using ad2W nreflW by blast
-    have "y \<noteq> a" sorry
+    have "y \<noteq> a" sorry (*does not hold, y might be v0*)
     from `y \<noteq> a` `a \<noteq> d2` disjunct ad2W yD have "y \<noteq> d2" by(simp add: bi_def backflows_def, blast)
     (* d2 \<longrightarrow> y \<longrightarrow> (y,a) \<longrightarrow> a,d2 <-- in W*) (*need d2 \<noteq> y*)
     (*from yD have "set [(y,a)] \<subseteq> bi D \<and> pcas y [(y,a)] a" by (auto simp: bi_def)*)

@@ -1,0 +1,13 @@
+seL4 for pi
+
+make kzm_simulation_debug_xml_defconfig
+
+
+./kernel/include/plat/imx31/plat/machine/devices.h:#define UART_PADDR 0x43f90000
+
+#change start address and vm address from 0x82000000 to 0x10000
+arm-none-eabi-objcopy --adjust-vma=-2180972544 sel4test-driver-image-arm-imx31 sel4test-driver-image-arm-imx31.corny
+
+../qemu-2.2.0/arm-softmmu/qemu-system-arm -cpu arm1176 -M versatilepb -kernel images/sel4test-driver-image-arm-imx31.corny -nographic
+
+#TODO: change addrr of UART to get some output. on kzm, it is on 0x43f90000, on versatilepb, somewhere else

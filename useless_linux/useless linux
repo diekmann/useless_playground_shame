@@ -1,0 +1,89 @@
+userland-less linux
+
+Annoyed by your userland?
+Annoyed by the systemd vs. sysvinit debate?
+Annoyed by all the pachting and updating your userland?
+Annoyed by shared libarary and dll hell?
+
+Userland-Less Linux (abberviated Useless Linux) ....
+
+
+Runs on my raspberry pi.
+We call it raspberry.py
+
+default FUD puc.
+
+Step 1: build python
+
+$ wget -q --no-check-certificate -O- https://www.python.org/ftp/python/2.7.9/Python-2.7.9.tar.xz | tar xJv
+$ cd Python-2.7.9/
+$ LINKFORSHARED="-static" SO=".penis" CCSHARED="-static" LDSHARED='$(CC) -static' ./configure --disable-ipv6 --with-suffix=.fud --with-doc-strings --disable-shared LDFLAGS="-static -static-libgcc" CPPFLAGS="-static"
+$ sha1sum python.fud
+8d193d3a8a445ab3fea81ef5e4d1790a5bce56de  python.fud
+
+You should get the same sha1sum.
+Make sure to use the corresponding tool chain and set your system clock appropriately.
+
+Step 2: Test the executable
+
+$ ./python.fud 
+Python 2.7.9 (default, Apr 29 2015, 02:33:16) 
+[GCC 4.8.2] on linux2
+Type "help", "copyright", "credits" or "license" for more information.
+>>> print "Welcome to the FUD PC"
+Welcome to the FUD PC
+>>> def f(x):
+... 	return 4+x
+... 
+>>> f(8)
+12
+>>> 2**3
+8
+>>> import math
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ImportError: No module named math
+>>> 3*math.pi
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+NameError: name 'math' is not defined
+>>> import socket
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/home/diekmann/Downloads/Python-2.7.9/Lib/socket.py", line 47, in <module>
+    import _socket
+ImportError: No module named _socket
+
+
+Works like charm
+
+Step 3: Deploy on target system
+
+$ sudo loadkeys de #important!
+$ cd Python-2.7.9/
+$ mv python.fud init
+$ cd ..
+$ cd Python-2.7.9/
+$ find . | cpio --quiet --dereference -o -H newc | gzip -9 > ~/fudinitrd
+$ cd ..
+$ sudo cp -i fudinitrd /boot/
+$ sudo vim /etc/grub.d/40_custom
+
+Add the following.
+We assume you are running the kernel fudlinuz.
+
+#!/bin/sh
+exec tail -n +3 $0
+# This file provides an easy way to add custom menu entries.  Simply type the
+# menu entries you want to add after this comment.  Be careful not to change
+# the 'exec tail' line above.
+
+menuentry "Useless Linux" {
+	linux	/boot/fudlinuz
+	initrd	/boot/fudinitrd
+}
+
+
+$ sudo update-grub
+
+Step 4: Enjoy
